@@ -6,6 +6,9 @@ from app.config import settings
 engine_kwargs = {}
 if "sqlite" in settings.DATABASE_URL:
     engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # Disable statement caching for compatibility with PgBouncer/Supabase pooler
+    engine_kwargs["connect_args"] = {"statement_cache_size": 0}
 
 async_engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
 AsyncSessionLocal = async_sessionmaker(bind=async_engine, class_=AsyncSession, expire_on_commit=False)
