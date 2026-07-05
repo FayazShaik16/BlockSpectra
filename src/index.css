@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+/* Custom scale wrappers for Section 5 & 7 to prevent layout conflicts */
+.section5-scale {
+  transform: scale(0.48);
+  transform-origin: center;
+}
+@media (min-width: 375px) {
+  .section5-scale {
+    transform: scale(0.55);
+  }
+}
+@media (min-width: 420px) {
+  .section5-scale {
+    transform: scale(0.65);
+  }
+}
+@media (min-width: 480px) {
+  .section5-scale {
+    transform: scale(0.75);
+  }
+}
+@media (min-width: 640px) {
+  .section5-scale {
+    transform: scale(0.9);
+  }
+}
+@media (min-width: 768px) {
+  .section5-scale {
+    transform: scale(1);
+  }
+}
+
+.section7-scale {
+  transform: scale(0.42);
+  transform-origin: center;
+}
+@media (min-width: 375px) {
+  .section7-scale {
+    transform: scale(0.48);
+  }
+}
+@media (min-width: 420px) {
+  .section7-scale {
+    transform: scale(0.56);
+  }
+}
+@media (min-width: 480px) {
+  .section7-scale {
+    transform: scale(0.68);
+  }
+}
+@media (min-width: 640px) {
+  .section7-scale {
+    transform: scale(0.85);
+  }
+}
+@media (min-width: 768px) {
+  .section7-scale {
+    transform: scale(1);
+  }
+}
+
+/* Premium sliding underline effect for Apple-inspired footer links */
+.footer-link {
+  position: relative;
+  display: inline-block;
+}
+.footer-link::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 1px;
+  bottom: -1px;
+  left: 0;
+  background-color: currentColor;
+  transform-origin: bottom right;
+  transition: transform 0.3s cubic-bezier(0.215, 0.610, 0.355, 1);
+}
+.footer-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+/* Global font-size scaling overrides to make all tools readable */
+.text-\[7px\] {
+  font-size: 10px !important;
+}
+.text-\[8px\] {
+  font-size: 11px !important;
+}
+.text-\[9px\] {
+  font-size: 12px !important;
+}
+.text-\[10px\] {
+  font-size: 13px !important;
+}
+.text-\[11px\] {
+  font-size: 14px !important;
+}
+.text-xs {
+  font-size: 13px !important;
+}
+.text-sm {
+  font-size: 15px !important;
+}

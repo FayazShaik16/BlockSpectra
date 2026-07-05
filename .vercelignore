@@ -1,0 +1,11 @@
+# Ignore backend files for Vercel static frontend host
+backend/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc

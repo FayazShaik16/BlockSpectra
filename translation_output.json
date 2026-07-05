@@ -1,0 +1,73 @@
+{
+  "id": "9a383402-efe0-4fa6-a4f1-7abe89c107c2",
+  "chain": "ethereum",
+  "address": "0x71C56810a14a07b7B547eE9F23dD7f23D5eD6031",
+  "status": "COMPLETED",
+  "contract_name": "VulnerableTokenPool",
+  "risk_score": 94,
+  "severity": "CRITICAL",
+  "confidence_score": 90,
+  "executive_summary": "हमने VulnerableTokenPool नाम के एक Smart Contract की जाँच पूरी कर ली है। यह Smart Contract Ethereum Blockchain पर काम करता है। हमारे सुरक्षा उपकरणों ने इसमें 8 समस्याएँ पाई हैं।",
+  "attack_scenarios": "कल्पना कीजिए कि एक चोर (exploiter) इस Smart Contract में कुछ कमियों का फायदा उठाता है। वह इस तरह से काम करता है कि Smart Contract के अंदर रखे सारे पैसे (contract balance) चुरा लेता है। यह ऐसा है जैसे कोई वेंडिंग मशीन (vending machine) में एक खास बटन दबाकर सारे सिक्के निकाल ले।",
+  "recommendations": "हम सुझाव देते हैं कि Smart Contract में कुछ सुरक्षा उपाय जोड़े जाएँ। सबसे पहले, 'ReentrancyGuard' नामक एक सुरक्षा तंत्र जोड़ा जाए। यह एक ऐसा ताला है जो चोर को बार-बार पैसे निकालने से रोकता है। दूसरा, हमें यह सुनिश्चित करना चाहिए कि केवल अधिकृत लोग (authorized addresses) ही Smart Contract के कुछ खास कामों को कर सकें। यह ऐसा है जैसे किसी बैंक के लॉकर की चाबी केवल बैंक मैनेजर के पास हो।",
+  "findings": [
+    {
+      "vulnerability": "Reentrancy candidate",
+      "description": "State updates occur after external low-level transfer call without ReentrancyGuard.",
+      "severity": "CRITICAL",
+      "line": 20,
+      "code_snippet": "(bool ok, ) = msg.sender.call{value: bal}(\"\");"
+    },
+    {
+      "vulnerability": "Unchecked Call return value",
+      "description": "The return value of external call is ignored. Transactions can fail silently.",
+      "severity": "MEDIUM",
+      "line": 28,
+      "code_snippet": "recipient.call{value: amt}(\"\");"
+    },
+    {
+      "vulnerability": "Delegatecall Abuse risk",
+      "description": "Using delegatecall preserves msg.sender and context. Ensure target contract is immutable/whitelisted.",
+      "severity": "HIGH",
+      "line": 33,
+      "code_snippet": "target.delegatecall(data);"
+    },
+    {
+      "vulnerability": "Timestamp Dependency",
+      "description": "Block timestamp can be manipulated by miners. Avoid using it for critical randomness or exact timers.",
+      "severity": "LOW",
+      "line": 38,
+      "code_snippet": "if (block.timestamp % 15 == 0) {"
+    },
+    {
+      "vulnerability": "Selfdestruct Vulnerability",
+      "description": "Unchecked selfdestruct allows malicious drainage / contract termination.",
+      "severity": "HIGH",
+      "line": 45,
+      "code_snippet": "selfdestruct(payable(owner));"
+    },
+    {
+      "vulnerability": "Integer Overflow/Underflow potential",
+      "description": "Solidity compiler version < 0.8.0 does not check for arithmetic overflows/underflows by default.",
+      "severity": "MEDIUM",
+      "line": 1,
+      "code_snippet": "pragma solidity ^0.7.6;"
+    },
+    {
+      "vulnerability": "Access Control issue",
+      "description": "Critical parameters modified without owner authorization controls.",
+      "severity": "HIGH",
+      "line": 9,
+      "code_snippet": "owner = msg.sender;"
+    },
+    {
+      "vulnerability": "Access Control issue",
+      "description": "Critical parameters modified without owner authorization controls.",
+      "severity": "HIGH",
+      "line": 45,
+      "code_snippet": "selfdestruct(payable(owner));"
+    }
+  ],
+  "created_at": "2026-07-04T11:22:53.147341",
+  "updated_at": "2026-07-04T11:22:55.574021"
+}

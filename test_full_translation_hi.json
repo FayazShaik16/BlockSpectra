@@ -1,0 +1,39 @@
+{
+  "report_data": {
+    "executive_summary": "TetherToken Smart Contract के विश्लेषण में कोई गंभीर समस्या नहीं पाई गई है।",
+    "attack_scenarios": "एक हमलावर निकासी (withdraw) फ़ंक्शन में फिर से घुसने की कोशिश कर सकता है, लेकिन स्थिति की जाँच इसे रोक देती है।",
+    "recommendations": "सुनिश्चित करें कि कंपाइलर की जाँच नियमित रूप से मान्य की जाती है।",
+    "vulnerability_overview": {
+      "title": "मजबूत सुरक्षा स्थिति",
+      "description": "कोई पहुँच संबंधी असामान्यताएँ या Reentrancy के रास्ते नहीं पाए गए हैं।"
+    },
+    "findings": [
+      {
+        "vulnerability": "Reentrancy",
+        "description": "निकासी (withdrawal) के दौरान यह Smart Contract बार-बार कॉल बैक के प्रति संवेदनशील है।",
+        "severity": "CRITICAL",
+        "line": 15,
+        "code_snippet": "msg.sender.call{value: amt}('')",
+        "details": {
+          "plainEnglish": "एक Smart Contract बार-बार खुद को कॉल कर सकता है।",
+          "analogy": "जैसे एक ATM दो बार पैसे दे रहा हो।",
+          "whyItMatters": "यह तिजोरी (vault) का सारा पैसा खाली कर देता है।",
+          "learnMore": "Solidity low-level call, स्थिति अपडेट होने से पहले बाहरी पते पर नियंत्रण भेजता है।"
+        }
+      }
+    ],
+    "cards": [
+      {
+        "id": 0,
+        "title": "यह Smart Contract क्या है?",
+        "text": "यह Smart Contract एक ERC-20 टोकन को दर्शाता है।",
+        "sub_items": [
+          {
+            "label": "Smart Contract का प्रकार",
+            "value": "ERC-20 Token"
+          }
+        ]
+      }
+    ]
+  }
+}
