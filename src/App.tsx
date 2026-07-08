@@ -1715,10 +1715,10 @@ const ScannerInterface = () => {
 
           {/* Loading details / Multi-step progress indicator */}
           {isLoading && (
-            <div className="bg-black/30 border border-white/5 rounded-2xl p-5 space-y-4">
+            <div className="bg-black/30 border border-white/5 rounded-2xl p-4 sm:p-5 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-3 font-mono text-[10px] text-blue-400">
                 <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
-                <span>{statusText}</span>
+                <span className="hidden sm:inline">{statusText}</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {analysisStages.map((stage, idx) => (
@@ -1730,7 +1730,7 @@ const ScannerInterface = () => {
                     }`}>
                       {idx < progressStage ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <span>{stage.icon}</span>}
                     </div>
-                    <span className={`text-[8px] font-mono font-bold text-center leading-tight transition-colors duration-300 ${
+                    <span className={`text-[8px] font-mono font-bold text-center leading-tight transition-colors duration-300 hidden sm:block ${
                       idx <= progressStage ? 'text-gray-300' : 'text-gray-600'
                     }`}>{stage.label}</span>
                     <div className={`w-full h-0.5 rounded-full transition-all duration-700 ${
