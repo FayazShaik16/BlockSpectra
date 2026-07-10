@@ -8,7 +8,7 @@ import { ReactFlow, Background, Controls, MiniMap, MarkerType, Handle, Position 
 import '@xyflow/react/dist/style.css';
 import { useTranslation, getToolTranslationKeys } from './translations';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://127.0.0.1:8000" : "https://fayazshaik-blockspectra-backend.hf.space");
 
 
 const platformItems = [
