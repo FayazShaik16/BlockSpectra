@@ -29,10 +29,9 @@ async def get_contract_source(chain: str, address: str) -> Optional[Tuple[str, s
         logger.info(f"Found source code via Blockscout for {address}")
         return result
 
-    # 4. Fallback: Provide a sample code template dynamically based on address hash,
-    # so the scanner runs live static audits on diverse contracts in development mode.
-    logger.warning(f"Could not retrieve verified source for {address}. Falling back to dynamic mock templates.")
-    return get_dynamic_mock_contract(address)
+    # 4. If not found on any explorer, return None (contract unverified or does not exist)
+    logger.warning(f"Could not retrieve verified source for {address} on chain {chain}.")
+    return None
 
 def get_dynamic_mock_contract(address: str) -> Tuple[str, str]:
     try:

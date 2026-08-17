@@ -7,6 +7,7 @@ import Wlogo from './assets/Wlogo.png';
 import { ReactFlow, Background, Controls, MiniMap, MarkerType, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTranslation, getToolTranslationKeys } from './translations';
+import { validateAddress, getAddressPlaceholder } from './utils/addressValidator';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://127.0.0.1:8000" : "https://fayazshaik-blockspectra-backend.hf.space");
 
@@ -1246,11 +1247,11 @@ const getExploitability = (vulnerability: string, severity: string) => {
   if (severity === "HIGH") return { level: "High", percent: 75, scenario: "Under specific conditions, an attacker could leverage this flaw to manipulate contract state or extract value." };
   return { level: "Medium", percent: 45, scenario: "While not immediately dangerous, this issue could be combined with other vulnerabilities to create an exploit chain." };
 };
-
 const ScannerInterface = () => {
   const { t, currentLang } = useTranslation();
   const [chain, setChain] = useState("ethereum");
   const [address, setAddress] = useState("");
+  const [inputError, setInputError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [statusText, setStatusText] = useState("");
@@ -1528,7 +1529,17 @@ const ScannerInterface = () => {
 
   const handleStartScan = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!address.trim()) return;
+    if (!address.trim()) {
+      setInputError("Please enter a contract address");
+      return;
+    }
+
+    const validation = validateAddress(chain, address, "contract address");
+    if (!validation.isValid) {
+      setInputError(validation.error || "Invalid address format");
+      return;
+    }
+    setInputError("");
 
     setIsLoading(true);
     setReport(null);
@@ -1541,7 +1552,10 @@ const ScannerInterface = () => {
         body: JSON.stringify({ chain, address })
       });
 
-      if (!res.ok) throw new Error("Server failed to initialize scan");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Server failed to initialize scan");
+      }
       const initialReport = await res.json();
       pollReportStatus(initialReport.id);
 
@@ -1569,7 +1583,7 @@ const ScannerInterface = () => {
         } else if (data.status === "FAILED") {
           clearInterval(interval);
           setIsLoading(false);
-          setStatusText("Scan failed. Ensure contract address is correct and verified on the selected chain explorer.");
+          setStatusText(data.executive_summary || "Scan failed. Ensure contract address is correct and verified on the selected chain explorer.");
         }
       } catch (err) {
         console.error("Status poll error", err);
@@ -1666,7 +1680,10 @@ const ScannerInterface = () => {
               </label>
               <select
                 value={chain}
-                onChange={(e) => setChain(e.target.value)}
+                onChange={(e) => {
+                  setChain(e.target.value);
+                  if (inputError) setInputError("");
+                }}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-xs text-white focus:outline-none focus:border-blue-500/50"
               >
                 {SUPPORTED_CHAINS.map((c) => (
@@ -1684,10 +1701,13 @@ const ScannerInterface = () => {
               </label>
               <input
                 type="text"
-                placeholder="0x..."
+                placeholder={getAddressPlaceholder(chain)}
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500/50 font-mono"
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  if (inputError) setInputError("");
+                }}
+                className={`w-full bg-white/5 border ${inputError ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-blue-500/50'} rounded-xl px-4 py-3 text-xs text-white focus:outline-none font-mono`}
               />
             </div>
 
@@ -1711,6 +1731,14 @@ const ScannerInterface = () => {
                 )}
               </button>
             </div>
+
+            {/* Inline validation error display */}
+            {inputError && (
+              <div className="md:col-span-12 flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{inputError}</span>
+              </div>
+            )}
           </form>
 
           {/* Loading details / Multi-step progress indicator */}
@@ -2571,6 +2599,7 @@ const flagMeta: Record<string, { label: string; icon: string; color: string; des
 const WalletIntelligence = () => {
   const [chain, setChain] = useState("ethereum");
   const [address, setAddress] = useState("");
+  const [inputError, setInputError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [report, setReport] = useState<any>(null);
@@ -2595,7 +2624,17 @@ const WalletIntelligence = () => {
 
   const handleStartScan = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!address.trim()) return;
+    if (!address.trim()) {
+      setInputError("Please enter a wallet address");
+      return;
+    }
+
+    const validation = validateAddress(chain, address, "wallet address");
+    if (!validation.isValid) {
+      setInputError(validation.error || "Invalid address format");
+      return;
+    }
+    setInputError("");
 
     setIsLoading(true);
     setReport(null);
@@ -2608,7 +2647,10 @@ const WalletIntelligence = () => {
         body: JSON.stringify({ chain, address }),
       });
 
-      if (!res.ok) throw new Error("Server failed to initialize wallet scan");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Server failed to initialize wallet scan");
+      }
       const initialReport = await res.json();
       pollReportStatus(initialReport.id);
     } catch (err: any) {
@@ -2730,7 +2772,10 @@ const WalletIntelligence = () => {
               </label>
               <select
                 value={chain}
-                onChange={(e) => setChain(e.target.value)}
+                onChange={(e) => {
+                  setChain(e.target.value);
+                  if (inputError) setInputError("");
+                }}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-xs text-white focus:outline-none focus:border-amber-500/50"
               >
                 {WALLET_CHAINS.map((c) => (
@@ -2748,10 +2793,13 @@ const WalletIntelligence = () => {
               </label>
               <input
                 type="text"
-                placeholder="0x... or native address"
+                placeholder={getAddressPlaceholder(chain)}
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-amber-500/50 font-mono"
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  if (inputError) setInputError("");
+                }}
+                className={`w-full bg-white/5 border ${inputError ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-amber-500/50'} rounded-xl px-4 py-3 text-xs text-white focus:outline-none font-mono`}
               />
             </div>
 
@@ -2775,7 +2823,22 @@ const WalletIntelligence = () => {
                 )}
               </button>
             </div>
+
+            {/* Inline validation error */}
+            {inputError && (
+              <div className="md:col-span-12 flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{inputError}</span>
+              </div>
+            )}
           </form>
+
+          {statusText && (statusText.startsWith("Error:") || statusText.toLowerCase().includes("fail")) && !isLoading && (
+            <div className="flex items-center gap-2.5 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+              <span>{statusText}</span>
+            </div>
+          )}
 
           {/* Loading */}
           {isLoading && (
@@ -3299,6 +3362,7 @@ const buildReactFlowEdges = (backendEdges: any[]) => {
 const AttackGraph = () => {
   const [chain, setChain] = useState("ethereum");
   const [address, setAddress] = useState("");
+  const [inputError, setInputError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [report, setReport] = useState<any>(null);
@@ -3338,7 +3402,17 @@ const AttackGraph = () => {
 
   const handleBuildGraph = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!address.trim()) return;
+    if (!address.trim()) {
+      setInputError("Please enter an address to trace");
+      return;
+    }
+
+    const validation = validateAddress(chain, address, "target address");
+    if (!validation.isValid) {
+      setInputError(validation.error || "Invalid address format");
+      return;
+    }
+    setInputError("");
 
     setIsLoading(true);
     setReport(null);
@@ -3353,7 +3427,10 @@ const AttackGraph = () => {
         body: JSON.stringify({ chain, address })
       });
 
-      if (!res.ok) throw new Error("Server failed to initialize graph builder");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Server failed to initialize graph builder");
+      }
       const initialReport = await res.json();
       pollReportStatus(initialReport.id);
     } catch (err: any) {
@@ -3563,7 +3640,10 @@ const AttackGraph = () => {
               </label>
               <select
                 value={chain}
-                onChange={(e) => setChain(e.target.value)}
+                onChange={(e) => {
+                  setChain(e.target.value);
+                  if (inputError) setInputError("");
+                }}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-xs text-white focus:outline-none focus:border-blue-500/50"
               >
                 {SUPPORTED_CHAINS.map((c) => (
@@ -3580,10 +3660,13 @@ const AttackGraph = () => {
               </label>
               <input
                 type="text"
-                placeholder="0x..."
+                placeholder={getAddressPlaceholder(chain)}
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500/50 font-mono"
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  if (inputError) setInputError("");
+                }}
+                className={`w-full bg-white/5 border ${inputError ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-blue-500/50'} rounded-xl px-4 py-3 text-xs text-white focus:outline-none font-mono`}
               />
             </div>
 
@@ -3606,7 +3689,22 @@ const AttackGraph = () => {
                 )}
               </button>
             </div>
+
+            {/* Inline validation error */}
+            {inputError && (
+              <div className="md:col-span-12 flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{inputError}</span>
+              </div>
+            )}
           </form>
+
+          {statusText && (statusText.startsWith("Error:") || statusText.toLowerCase().includes("fail")) && !isLoading && (
+            <div className="flex items-center gap-2.5 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+              <span>{statusText}</span>
+            </div>
+          )}
 
           {isLoading && (
             <div className="bg-black/30 border border-white/5 rounded-xl p-4 flex items-center gap-3 font-mono text-[10px] text-blue-400">
@@ -3952,6 +4050,7 @@ const TransactionSimulator = () => {
   const [data, setData] = useState("");
   const [value, setValue] = useState("");
   const [gasLimit, setGasLimit] = useState(1000000);
+  const [inputError, setInputError] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
@@ -3981,8 +4080,43 @@ const TransactionSimulator = () => {
 
   const handleStartSimulation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sender.trim()) return;
+    if (!sender.trim()) {
+      setInputError("Please enter a sender address");
+      return;
+    }
 
+    // Validate all provided addresses for selected chain
+    const senderVal = validateAddress(chain, sender, "sender address");
+    if (!senderVal.isValid) {
+      setInputError(senderVal.error || "Invalid sender address format");
+      return;
+    }
+
+    if (receiver.trim()) {
+      const recVal = validateAddress(chain, receiver, "receiver address");
+      if (!recVal.isValid) {
+        setInputError(recVal.error || "Invalid receiver address format");
+        return;
+      }
+    }
+
+    if (tokenAddress.trim()) {
+      const tokVal = validateAddress(chain, tokenAddress, "token address");
+      if (!tokVal.isValid) {
+        setInputError(tokVal.error || "Invalid token address format");
+        return;
+      }
+    }
+
+    if (contractAddress.trim()) {
+      const contractVal = validateAddress(chain, contractAddress, "contract address");
+      if (!contractVal.isValid) {
+        setInputError(contractVal.error || "Invalid contract address format");
+        return;
+      }
+    }
+
+    setInputError("");
     setIsLoading(true);
     setReport(null);
     setConsoleLogs([]);
@@ -4027,7 +4161,10 @@ const TransactionSimulator = () => {
         })
       });
 
-      if (!res.ok) throw new Error("Simulator failed to compile payload");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Simulator failed to compile payload");
+      }
       const initialReport = await res.json();
       pollReportStatus(initialReport.id);
 
@@ -4229,10 +4366,13 @@ const TransactionSimulator = () => {
                 <input
                   type="text"
                   required
-                  placeholder="0x... or native wallet address"
+                  placeholder={getAddressPlaceholder(chain)}
                   value={sender}
-                  onChange={(e) => setSender(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500/50 font-mono"
+                  onChange={(e) => {
+                    setSender(e.target.value);
+                    if (inputError) setInputError("");
+                  }}
+                  className={`w-full bg-white/5 border ${inputError ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-blue-500/50'} rounded-xl px-4 py-3 text-xs text-white focus:outline-none font-mono`}
                 />
               </div>
 
@@ -4434,6 +4574,14 @@ const TransactionSimulator = () => {
                 </>
               )}
             </div>
+
+            {/* Inline validation error */}
+            {inputError && (
+              <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{inputError}</span>
+              </div>
+            )}
 
             {/* Execute Button */}
             <div className="flex justify-end">
@@ -6809,6 +6957,11 @@ const BridgeIntelligenceInterface = () => {
       setErrorMsg("Sender address is required");
       return;
     }
+    const val = validateAddress(sourceChain, senderAddress, "sender address");
+    if (!val.isValid) {
+      setErrorMsg(val.error || "Invalid sender address format");
+      return;
+    }
     if (!amountUsd || parseFloat(amountUsd) <= 0) {
       setErrorMsg("Amount must be greater than 0");
       return;
@@ -6832,7 +6985,10 @@ const BridgeIntelligenceInterface = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.detail || `Server error: ${resp.status}`);
+      }
       const data = await resp.json();
       setResult(data);
       setResultTab("overview");
@@ -6998,8 +7154,11 @@ const BridgeIntelligenceInterface = () => {
             <input
               type="text"
               value={senderAddress}
-              onChange={(e) => setSenderAddress(e.target.value)}
-              placeholder="0x742d35Cc6634C0532925a3b..."
+              onChange={(e) => {
+                setSenderAddress(e.target.value);
+                if (errorMsg) setErrorMsg("");
+              }}
+              placeholder={getAddressPlaceholder(sourceChain)}
               className={inputCls}
             />
           </div>
@@ -8396,6 +8555,14 @@ const ReportGeneratorWorkspace = () => {
 
   const handleGenerateReport = async () => {
     if (!targetInput.trim() || generating) return;
+
+    if (activeTab === "contract" || activeTab === "wallet") {
+      const val = validateAddress(selectedChain, targetInput.trim(), `${activeTab} address`);
+      if (!val.isValid) {
+        setLogLines([`❌ Error: ${val.error || "Invalid address format"}`]);
+        return;
+      }
+    }
     
     setGenerating(true);
     setProgress(0);
@@ -8438,7 +8605,10 @@ const ReportGeneratorWorkspace = () => {
         })
       });
       
-      if (!res.ok) throw new Error("Report generation failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || "Report generation failed");
+      }
       const report = await res.json();
       
       pollReportStatus(report.id, progressInterval);

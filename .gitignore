@@ -47,3 +47,4 @@ htmlcov/
 *.njsproj
 *.sln
 *.sw?
+scratch/

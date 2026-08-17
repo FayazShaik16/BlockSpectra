@@ -28,7 +28,7 @@ async def run_async_analysis_task(analysis_id: str):
             # 1. Fetch smart contract source code
             source_res = await get_contract_source(db_analysis.chain, db_analysis.address)
             if not source_res:
-                raise Exception("Contract source code not found or could not be retrieved.")
+                raise Exception(f"Contract source code not found or contract is not verified on the {db_analysis.chain.upper()} blockchain explorer.")
                 
             contract_name, source_code = source_res
             db_analysis.contract_name = contract_name
@@ -38,24 +38,27 @@ async def run_async_analysis_task(analysis_id: str):
             findings = StaticAnalyzer.analyze_solidity(source_code)
             db_analysis.findings = findings
             
-            # Determine overall vulnerability metrics
+            # Determine overall vulnerability metrics dynamically from findings
             if findings:
-                severities = [f["severity"] for f in findings]
-                if "CRITICAL" in severities:
+                crit_count = sum(1 for f in findings if f.get("severity") == "CRITICAL")
+                high_count = sum(1 for f in findings if f.get("severity") == "HIGH")
+                med_count = sum(1 for f in findings if f.get("severity") == "MEDIUM")
+                low_count = sum(1 for f in findings if f.get("severity") == "LOW")
+
+                # Cumulative weighted risk score calculation
+                raw_score = (crit_count * 40) + (high_count * 25) + (med_count * 12) + (low_count * 5) + 10
+                db_analysis.risk_score = min(98, max(12, raw_score))
+
+                if crit_count > 0:
                     db_analysis.severity = "CRITICAL"
-                    db_analysis.risk_score = 94
-                elif "HIGH" in severities:
+                elif high_count > 0:
                     db_analysis.severity = "HIGH"
-                    db_analysis.risk_score = 78
-                elif "MEDIUM" in severities:
+                elif med_count > 0:
                     db_analysis.severity = "MEDIUM"
-                    db_analysis.risk_score = 56
-                elif "LOW" in severities:
-                    db_analysis.override_severity = "LOW"
-                    db_analysis.risk_score = 32
+                elif low_count > 0:
+                    db_analysis.severity = "LOW"
                 else:
                     db_analysis.severity = "INFO"
-                    db_analysis.risk_score = 14
             else:
                 db_analysis.severity = "INFO"
                 db_analysis.risk_score = 4

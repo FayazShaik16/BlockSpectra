@@ -37,6 +37,7 @@ from sse_starlette.sse import EventSourceResponse
 from app.report_schemas import ReportGenerateRequest, ReportResponse, ReportHistoryResponse, RegenerateSectionRequest
 from app.report_tasks import run_report_generation_task, regenerate_report_section
 from app.models import AIReport
+from app.address_validator import validate_chain_address
 
 
 app = FastAPI(title=settings.APP_NAME)
@@ -62,6 +63,10 @@ async def analyze_contract(
     background_tasks: BackgroundTasks, 
     db: AsyncSession = Depends(get_db)
 ):
+    is_valid, err = validate_chain_address(request.chain, request.address, "contract address")
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=err)
+
     analysis_id = str(uuid.uuid4())
     
     # Store initial pending state in database
@@ -258,6 +263,10 @@ async def analyze_wallet(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
 ):
+    is_valid, err = validate_chain_address(request.chain, request.address, "wallet address")
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=err)
+
     analysis_id = str(uuid.uuid4())
 
     db_analysis = WalletAnalysis(
@@ -304,6 +313,10 @@ async def build_attack_graph(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
 ):
+    is_valid, err = validate_chain_address(request.chain, request.address, "target address")
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=err)
+
     analysis_id = str(uuid.uuid4())
 
     db_analysis = GraphAnalysis(
@@ -335,6 +348,23 @@ async def simulate_transaction(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
 ):
+    if request.sender:
+        is_valid, err = validate_chain_address(request.chain, request.sender, "sender address")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err)
+    if request.receiver:
+        is_valid, err = validate_chain_address(request.chain, request.receiver, "receiver address")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err)
+    if request.token_address:
+        is_valid, err = validate_chain_address(request.chain, request.token_address, "token address")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err)
+    if request.contract_address:
+        is_valid, err = validate_chain_address(request.chain, request.contract_address, "contract address")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err)
+
     sim_id = str(uuid.uuid4())
     
     db_sim = TransactionSimulation(
@@ -403,6 +433,14 @@ async def calculate_risk_score(request: RiskAnalysisRequest):
 
 @app.post("/bridges/analyze", response_model=BridgeAnalysisResponse)
 async def analyze_bridges(request: BridgeAnalysisRequest):
+    if request.sender:
+        is_valid, err = validate_chain_address(request.from_chain, request.sender, "sender address")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err)
+    if request.receiver:
+        is_valid, err = validate_chain_address(request.to_chain, request.receiver, "receiver address")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err)
     return await BridgeIntelligenceEngine.analyze(request)
 
 @app.post("/agent/chat")
@@ -429,6 +467,11 @@ async def generate_report(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
 ):
+    if request.target:
+        is_valid, err = validate_chain_address(request.chain, request.target, "target address")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err)
+
     report_id = str(uuid.uuid4())
     db_report = AIReport(
         id=report_id,
